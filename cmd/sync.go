@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
@@ -25,21 +26,40 @@ var syncCmd = &cobra.Command{
 		// TODO: Implement the sync
 		ctx := cmd.Context()
 
+		logger := slog.With("component", "sync")
+
+		logger.DebugContext(ctx, "Connecting to database")
 		db, err := sqlx.Connect("mysql", "root:root@tcp(localhost:3306)/backscreen_home")
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
 
+		logger.DebugContext(ctx, "Creating storage client")
 		storage := storage.New(db)
 		if err := storage.Migrate(ctx); err != nil {
 			return fmt.Errorf("failed to migrate database: %w", err)
 		}
 
+		logger.InfoContext(ctx, "Starting syncing currencies")
+
+		wg := sync.WaitGroup{}
+		wg.Add(len(allowedCurrencies))
+
 		for _, currency := range allowedCurrencies {
-			if err := syncCurrency(ctx, storage, currency, LVBankRSSRateFetcher{}); err != nil {
-				return fmt.Errorf("failed to sync currency %s: %w", currency, err)
-			}
+			go func(wg *sync.WaitGroup, currency string) {
+				defer wg.Done()
+
+				logger.InfoContext(ctx, "Syncing currency", slog.String("currency", currency))
+
+				if err := syncCurrency(ctx, storage, currency, LVBankRSSRateFetcher{}); err != nil {
+					logger.ErrorContext(ctx, "Failed to sync currency", slog.String("currency", currency), slog.Any("error", err))
+				}
+			}(&wg, currency)
 		}
+
+		wg.Wait()
+
+		logger.InfoContext(ctx, "Finished syncing currencies")
 
 		return nil
 	},
