@@ -2,22 +2,29 @@
 
 ## Task
 
-Create a microservice in Go language, which fetches currency exchange rates from https://www.bank.lv/vk/ecb_rss.xml RSS feed and shows it to users.
-The microservice consists of 2 endpoints:
-1. JSON Data return from database - latest currency exchange rates. 2. JSON Data return from database - History of exchange rates for a specific currency.
+Create a microservice in Go language, which fetches currency exchange rates 
+from https://www.bank.lv/vk/ecb_rss.xml RSS feed and shows it to users.
+
+The micsroservice has to implement 2 endpoints that return data in JSON format:
+1. Return latest currency exchange rates.
+2. History of exchange rates for a specific currency.
 
 The microservice also has 2 console commands:
-1. Command, which fetches current exchange rates from (https://www.bank.lv/vk/ecb_rss.xml) and saves them to database.
-    - Create this fetching using go routines by fetching each of 10 preselected currencies in their own requests like the HTTP endpoint would only be returning the result for one currency each time.
-    - So request 1 fetches info for currency GBP pulls only that currency info from the request and processes it.
-    - Request 2 then again fetches the endpoint and pulls its own currency info.
-    - Create the fetching of currency info into an interface so it can easily be adapted to new endpoints for fetching data.
-2. Command, which starts the microservice so that the endpoints are accessible to users.
+1. Command, to fetch current exchange rates from (https://www.bank.lv/vk/ecb_rss.xml) and store them in database.
+    - Select 10 currencies 
+    - Each currency has to be fetched in their own request by pretending that
+    the endpoint returns data only for one currency at a time.
+    - Fetch the data using goroutines.
+    - Process the data and store it in the database.
+    - Abstract the currency fetching into an interface so it can be adapted to
+    use new endpoints
+2. Command, that starts the API server
 
-Include extensive error logging and debug logging.
-Preferably use either MySQL(MariaDB) or Cassandra database.
-Create a github(Or any other version control system that uses git) project with all of the code and readme so that we can run the microservice ourselves.
-Readme must include all instructions on how to set up and run the microservice, preferably on Docker.
+- Include extensive error logging and debug logging.
+- Preferably use either MySQL(MariaDB) or Cassandra database.
+- Create a GitHub(or any other git platform) project with the source code and README so that microservice can be ran by us.
+
+README must include all instructions on how to set up and run the microservice, preferably using Docker.
 
 ## Notes
 

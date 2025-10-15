@@ -9,7 +9,7 @@ tasks:
   build:
     deps: [generate]
     cmds:
-      - CGO_ENABLED=0 go build -v -o ./bin/app ./
+      - CGO_ENABLED=0 go build -v -o ./bin/app
 
   generate:
     cmds:
