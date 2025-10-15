@@ -42,6 +42,7 @@ var syncCmd = &cobra.Command{
 
 		logger.InfoContext(ctx, "Starting syncing currencies")
 
+		// TODO: Remove the WaitGroup and use some channels man
 		wg := sync.WaitGroup{}
 		wg.Add(len(allowedCurrencies))
 
@@ -66,7 +67,7 @@ var syncCmd = &cobra.Command{
 }
 
 type RateFetcher interface {
-	Fetch(ctx context.Context, currency string) (entity.Rate, error)
+	Fetch(ctx context.Context, currency string) (entity.Rate, error) // TODO This shoudl return a list of rates, since one rquest can return multiple days
 }
 
 func syncCurrency(ctx context.Context, store *storage.Client, currency string, rateFetcher RateFetcher) error {
@@ -77,6 +78,7 @@ func syncCurrency(ctx context.Context, store *storage.Client, currency string, r
 		return fmt.Errorf("failed to fetch rate: %w", err)
 	}
 
+	// TODO: Batch the rate inserts, to get more performance
 	logger.DebugContext(ctx, "Storing rates to database", slog.Any("rate", rate))
 	if err := store.StoreRate(ctx, rate); err != nil {
 		if errors.Is(err, storage.ErrDuplicate) {
