@@ -1,0 +1,12 @@
+openapi: 3.0.0
+
+info:
+  title: Currency exchange rates service
+  name: currency-exchange-rates
+  description: Currency exchange rates service that has two main modes. Fetch rates and server an API to get those.
+  version: 0.0.1
+
+paths:
+  /api/v1/currencies:
+    get:
+      summary: Get all currencies

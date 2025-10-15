@@ -7,5 +7,10 @@ tasks:
     deps: [build]
 
   build:
+    deps: [generate]
     cmds:
       - CGO_ENABLED=0 go build -v -o ./bin/app ./
+
+  generate:
+    cmds:
+      - go generate ./...
