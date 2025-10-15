@@ -34,3 +34,7 @@ tasks:
   docker-clean:
     cmds:
       - docker compose down --volumes
+
+  db:
+    cmds:
+      - mysql --user root --password=root --host 127.0.0.1 --port 3306 backscreen_home
