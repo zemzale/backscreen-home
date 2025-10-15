@@ -1,0 +1,11 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  default:
+    deps: [build]
+
+  build:
+    cmds:
+      - CGO_ENABLED=0 go build -v -o ./bin/app ./...
