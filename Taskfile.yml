@@ -8,4 +8,4 @@ tasks:
 
   build:
     cmds:
-      - CGO_ENABLED=0 go build -v -o ./bin/app ./...
+      - CGO_ENABLED=0 go build -v -o ./bin/app ./

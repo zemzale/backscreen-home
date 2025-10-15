@@ -4,6 +4,8 @@ go 1.25.1
 
 tool github.com/go-task/task/v3/cmd/task
 
+require github.com/spf13/cobra v1.10.1
+
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Ladicle/tabwriter v1.0.0 // indirect
@@ -30,6 +32,7 @@ require (
 	github.com/go-task/template v0.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
