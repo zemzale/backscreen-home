@@ -7,6 +7,51 @@ info:
   version: 0.0.1
 
 paths:
-  /api/v1/currencies:
+  /api/v1/{currency}:
     get:
-      summary: Get all currencies
+      summary: Get latest exchange rate
+      parameters:
+        - in: path
+          name: currency
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rate"
+
+  /api/v1/{currency}/history:
+    get:
+      summary: Get all historical exchange rates
+      parameters:
+        - in: path
+          name: currency
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rate"
+
+components:
+  schemas:
+    Rate:
+      type: object
+      properties:
+        code:
+          type: string
+        value:
+          type: string
+        published_at:
+          type: string
+          format: date-time

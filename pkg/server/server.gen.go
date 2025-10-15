@@ -4,26 +4,47 @@
 package server
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
+	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
+
+// Rate defines model for Rate.
+type Rate struct {
+	Code        *string    `json:"code,omitempty"`
+	PublishedAt *time.Time `json:"published_at,omitempty"`
+	Value       *string    `json:"value,omitempty"`
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Get all currencies
-	// (GET /api/v1/currencies)
-	GetApiV1Currencies(w http.ResponseWriter, r *http.Request)
+	// Get latest exchange rate
+	// (GET /api/v1/{currency})
+	GetApiV1Currency(w http.ResponseWriter, r *http.Request, currency string)
+	// Get all historical exchange rates
+	// (GET /api/v1/{currency}/history)
+	GetApiV1CurrencyHistory(w http.ResponseWriter, r *http.Request, currency string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
 
-// Get all currencies
-// (GET /api/v1/currencies)
-func (_ Unimplemented) GetApiV1Currencies(w http.ResponseWriter, r *http.Request) {
+// Get latest exchange rate
+// (GET /api/v1/{currency})
+func (_ Unimplemented) GetApiV1Currency(w http.ResponseWriter, r *http.Request, currency string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get all historical exchange rates
+// (GET /api/v1/{currency}/history)
+func (_ Unimplemented) GetApiV1CurrencyHistory(w http.ResponseWriter, r *http.Request, currency string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -36,11 +57,47 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// GetApiV1Currencies operation middleware
-func (siw *ServerInterfaceWrapper) GetApiV1Currencies(w http.ResponseWriter, r *http.Request) {
+// GetApiV1Currency operation middleware
+func (siw *ServerInterfaceWrapper) GetApiV1Currency(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "currency" -------------
+	var currency string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "currency", chi.URLParam(r, "currency"), &currency, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "currency", Err: err})
+		return
+	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetApiV1Currencies(w, r)
+		siw.Handler.GetApiV1Currency(w, r, currency)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetApiV1CurrencyHistory operation middleware
+func (siw *ServerInterfaceWrapper) GetApiV1CurrencyHistory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "currency" -------------
+	var currency string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "currency", chi.URLParam(r, "currency"), &currency, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "currency", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetApiV1CurrencyHistory(w, r, currency)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -164,8 +221,136 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/currencies", wrapper.GetApiV1Currencies)
+		r.Get(options.BaseURL+"/api/v1/{currency}", wrapper.GetApiV1Currency)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/{currency}/history", wrapper.GetApiV1CurrencyHistory)
 	})
 
 	return r
+}
+
+type GetApiV1CurrencyRequestObject struct {
+	Currency string `json:"currency"`
+}
+
+type GetApiV1CurrencyResponseObject interface {
+	VisitGetApiV1CurrencyResponse(w http.ResponseWriter) error
+}
+
+type GetApiV1Currency200JSONResponse Rate
+
+func (response GetApiV1Currency200JSONResponse) VisitGetApiV1CurrencyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetApiV1CurrencyHistoryRequestObject struct {
+	Currency string `json:"currency"`
+}
+
+type GetApiV1CurrencyHistoryResponseObject interface {
+	VisitGetApiV1CurrencyHistoryResponse(w http.ResponseWriter) error
+}
+
+type GetApiV1CurrencyHistory200JSONResponse []Rate
+
+func (response GetApiV1CurrencyHistory200JSONResponse) VisitGetApiV1CurrencyHistoryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+	// Get latest exchange rate
+	// (GET /api/v1/{currency})
+	GetApiV1Currency(ctx context.Context, request GetApiV1CurrencyRequestObject) (GetApiV1CurrencyResponseObject, error)
+	// Get all historical exchange rates
+	// (GET /api/v1/{currency}/history)
+	GetApiV1CurrencyHistory(ctx context.Context, request GetApiV1CurrencyHistoryRequestObject) (GetApiV1CurrencyHistoryResponseObject, error)
+}
+
+type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
+type StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// GetApiV1Currency operation middleware
+func (sh *strictHandler) GetApiV1Currency(w http.ResponseWriter, r *http.Request, currency string) {
+	var request GetApiV1CurrencyRequestObject
+
+	request.Currency = currency
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetApiV1Currency(ctx, request.(GetApiV1CurrencyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetApiV1Currency")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetApiV1CurrencyResponseObject); ok {
+		if err := validResponse.VisitGetApiV1CurrencyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetApiV1CurrencyHistory operation middleware
+func (sh *strictHandler) GetApiV1CurrencyHistory(w http.ResponseWriter, r *http.Request, currency string) {
+	var request GetApiV1CurrencyHistoryRequestObject
+
+	request.Currency = currency
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetApiV1CurrencyHistory(ctx, request.(GetApiV1CurrencyHistoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetApiV1CurrencyHistory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetApiV1CurrencyHistoryResponseObject); ok {
+		if err := validResponse.VisitGetApiV1CurrencyHistoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
