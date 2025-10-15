@@ -14,3 +14,11 @@ tasks:
   generate:
     cmds:
       - go generate ./...
+
+  test:
+    cmds:
+      - go test -v -short ./...
+
+  test-all:
+    cmds:
+      - go test -v -race ./...
