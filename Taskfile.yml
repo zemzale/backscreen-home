@@ -22,3 +22,15 @@ tasks:
   test-all:
     cmds:
       - go test -v -race ./...
+
+  docker-up:
+    cmds:
+      - docker compose up -d
+
+  docker-down:
+    cmds:
+      - docker compose down
+
+  docker-clean:
+    cmds:
+      - docker compose down --volumes
