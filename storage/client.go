@@ -2,21 +2,25 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
+	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/zemzale/backscreen-home/domain/entity"
 )
 
 const createRatesTable = `
 CREATE TABLE IF NOT EXISTS rates (
 	id INT NOT NULL AUTO_INCREMENT,
 	code VARCHAR(3) NOT NULL,
-	value VARCHAR(10) NOT NULL,
+	value VARCHAR(100) NOT NULL,
 	published_at DATETIME NOT NULL,
-	created_at DATETIME NOT NULL,
-	updated_at DATETIME NOT NULL,
+	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (id),
+	UNIQUE INDEX (code, published_at),
 	INDEX (code),
 	INDEX (published_at)
 );`
@@ -59,4 +63,21 @@ func (c *Client) Migrate(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (c *Client) StoreRate(ctx context.Context, rate entity.Rate) error {
+	_, err := c.db.ExecContext(ctx, `
+		INSERT INTO rates (code, value, published_at) VALUES (?, ?, ?);
+	`, rate.Code, rate.Value, rate.PublishedAt)
+	if err != nil {
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) {
+			if mysqlErr.Number == 1062 {
+				return ErrDuplicate
+			}
+		}
+
+	}
+
+	return err
 }

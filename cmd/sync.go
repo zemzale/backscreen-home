@@ -1,13 +1,21 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/http"
+	"slices"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
+	"github.com/zemzale/backscreen-home/domain/entity"
+	"github.com/zemzale/backscreen-home/domain/mapper"
 	"github.com/zemzale/backscreen-home/storage"
 )
+
+var allowedCurrencies = []string{"AUD", "BGN", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK", "GBP", "HKD"}
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
@@ -27,6 +35,76 @@ var syncCmd = &cobra.Command{
 			return fmt.Errorf("failed to migrate database: %w", err)
 		}
 
-		return errors.New("not implemented")
+		for _, currency := range allowedCurrencies {
+			if err := syncCurrency(ctx, storage, currency); err != nil {
+				return fmt.Errorf("failed to sync currency %s: %w", currency, err)
+			}
+		}
+
+		return nil
 	},
+}
+
+func syncCurrency(ctx context.Context, store *storage.Client, currency string) error {
+	logger := slog.With("component", "sync", "currency", currency)
+	logger.DebugContext(ctx, "Fetching rates")
+
+	url := "https://www.bank.lv/vk/ecb_rss.xml"
+	logger.DebugContext(ctx, "Creating requets for exchange rates", slog.String("url", url))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// TODO: Change out the default client, since it's very bad and has no timeouts
+
+	logger.InfoContext(ctx, "Sending request for exchange rates", slog.String("url", url))
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to fetch rates: %w", err)
+	}
+	defer resp.Body.Close()
+
+	logger.InfoContext(
+		ctx,
+		"Received response for exchange rates",
+		slog.String("url", url),
+		slog.Int("status", resp.StatusCode),
+	)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	logger.DebugContext(ctx, "Parsing rates")
+	rates, err := mapper.RatesFromXML(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to parse rates: %w", err)
+	}
+
+	logger.DebugContext(ctx, "Searchign for rate in response", slog.Int("rate_count", len(rates)))
+	idx := slices.IndexFunc(rates, func(r entity.Rate) bool {
+		return r.Code == currency
+	})
+
+	logger.DebugContext(ctx, "Found rate", slog.Int("index", idx))
+	if idx == -1 {
+		return fmt.Errorf("currency %s not found", currency)
+	}
+
+	rate := rates[idx]
+
+	logger.DebugContext(ctx, "Storing rates to database", slog.Any("rate", rate))
+	if err := store.StoreRate(ctx, rate); err != nil {
+		if errors.Is(err, storage.ErrDuplicate) {
+			logger.InfoContext(ctx,
+				"Rate already exists in database",
+				slog.Any("rate", rate),
+			)
+			return nil
+		}
+		return fmt.Errorf("failed to store rate: %w", err)
+	}
+
+	return nil
 }
