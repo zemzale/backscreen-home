@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- generator="Joomla! - Open Source Content Management" -->
+<?xml-stylesheet href="/plugins/system/jce/css/content.css?badb4208be409b1335b815dde676300e" type="text/css"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>Exchange Rates | Latvijas Banka</title>
+		<description><![CDATA[ECB EXCHANGE RATES]]></description>
+		<link>https://www.bank.lv/</link>
+		<lastBuildDate>Wed, 15 Oct 2025 15:28:44 +0300</lastBuildDate>
+		<generator>Joomla! - Open Source Content Management</generator>
+		<atom:link rel="self" type="application/rss+xml" href="https://www.bank.lv/component/graph/?view=graph&amp;format=feed&amp;mode=exc&amp;ecb=true&amp;Itemid=150&amp;type=rss"/>
+		<image>
+			<url>https://www.bank.lv/images/latvijas_banka_smalllogo.gif</url>
+			<title>Exchange Rates</title>
+			<link>https://www.bank.lv/</link>
+			<width>142</width>
+			<height>48</height>
+		</image>
+		<language>lv-LV</language>
+		<ttl>5</ttl>
+		<item>
+			<title>ECB EXCHANGE RATES.</title>
+			<link>https://www.bank.lv/</link>
+			<guid isPermaLink="false">https://www.bank.lv/#10.10</guid>
+			<description><![CDATA[AUD 1.76500000 BGN 1.95580000 BRL 6.20820000 CAD 1.62180000 CHF 0.93240000 CNY 8.23970000 CZK 24.29900000 DKK 7.46720000 GBP 0.87090000 HKD 9.00220000 HUF 390.49000000 IDR 19190.91000000 ILS 3.76820000 INR 102.62030000 ISK 141.60000000 JPY 176.46000000 KRW 1643.85000000 MXN 21.25650000 MYR 4.88750000 NOK 11.67750000 NZD 2.01100000 PHP 67.41900000 PLN 4.25760000 RON 5.09280000 SEK 11.00800000 SGD 1.50100000 THB 37.83300000 TRY 48.38360000 USD 1.15680000 ZAR 19.91220000 ]]></description>
+			<pubDate>Fri, 10 Oct 2025 03:00:00 +0300</pubDate>
+		</item>
+		<item>
+			<title>ECB EXCHANGE RATES.</title>
+			<link>https://www.bank.lv/</link>
+			<guid isPermaLink="false">https://www.bank.lv/#13.10</guid>
+			<description><![CDATA[AUD 1.77750000 BGN 1.95580000 BRL 6.33440000 CAD 1.62070000 CHF 0.93040000 CNY 8.25110000 CZK 24.35800000 DKK 7.46810000 GBP 0.86770000 HKD 8.99740000 HUF 392.68000000 IDR 19184.24000000 ILS 3.79950000 INR 102.60600000 ISK 141.60000000 JPY 175.98000000 KRW 1651.59000000 MXN 21.41370000 MYR 4.89100000 NOK 11.67900000 NZD 2.02200000 PHP 67.43500000 PLN 4.26150000 RON 5.08760000 SEK 11.01300000 SGD 1.50250000 THB 37.65100000 TRY 48.36460000 USD 1.15690000 ZAR 20.08750000 ]]></description>
+			<pubDate>Mon, 13 Oct 2025 03:00:00 +0300</pubDate>
+		</item>
+		<item>
+			<title>ECB EXCHANGE RATES.</title>
+			<link>https://www.bank.lv/</link>
+			<guid isPermaLink="false">https://www.bank.lv/#14.10</guid>
+			<description><![CDATA[AUD 1.79060000 BGN 1.95580000 BRL 6.35360000 CAD 1.62490000 CHF 0.92960000 CNY 8.24880000 CZK 24.32400000 DKK 7.46840000 GBP 0.87120000 HKD 8.98230000 HUF 393.00000000 IDR 19212.35000000 ILS 3.84090000 INR 102.58280000 ISK 141.40000000 JPY 175.72000000 KRW 1657.52000000 MXN 21.49260000 MYR 4.88690000 NOK 11.77250000 NZD 2.03090000 PHP 67.28800000 PLN 4.26250000 RON 5.09030000 SEK 11.03800000 SGD 1.50370000 THB 37.90500000 TRY 48.32420000 USD 1.15530000 ZAR 20.17510000 ]]></description>
+			<pubDate>Tue, 14 Oct 2025 03:00:00 +0300</pubDate>
+		</item>
+	</channel>
+</rss>
