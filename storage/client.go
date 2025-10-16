@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"time"
@@ -108,6 +109,9 @@ func (c *Client) GetLatestRate(ctx context.Context, code string) (entity.Rate, e
 		SELECT code, value, published_at FROM rates WHERE code = ? ORDER BY published_at DESC LIMIT 1;
 	`, code)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Rate{}, ErrNotFound
+		}
 		return entity.Rate{}, err
 	}
 
@@ -121,6 +125,9 @@ func (c *Client) GetRates(ctx context.Context, code string) ([]entity.Rate, erro
 		SELECT code, value, published_at FROM rates WHERE code = ? ORDER BY published_at DESC;
 	`, code)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 

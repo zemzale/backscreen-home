@@ -22,6 +22,11 @@ type Rate struct {
 	Value       string    `json:"value"`
 }
 
+// InternalServerError defines model for InternalServerError.
+type InternalServerError struct {
+	Error *string `json:"error,omitempty"`
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Get latest exchange rate
@@ -230,6 +235,13 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	return r
 }
 
+type InternalServerErrorJSONResponse struct {
+	Error *string `json:"error,omitempty"`
+}
+
+type NotFoundResponse struct {
+}
+
 type GetApiV1CurrencyRequestObject struct {
 	Currency string `json:"currency"`
 }
@@ -247,6 +259,24 @@ func (response GetApiV1Currency200JSONResponse) VisitGetApiV1CurrencyResponse(w 
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetApiV1Currency404Response = NotFoundResponse
+
+func (response GetApiV1Currency404Response) VisitGetApiV1CurrencyResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type GetApiV1Currency500JSONResponse struct {
+	InternalServerErrorJSONResponse
+}
+
+func (response GetApiV1Currency500JSONResponse) VisitGetApiV1CurrencyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetApiV1CurrencyHistoryRequestObject struct {
 	Currency string `json:"currency"`
 }
@@ -260,6 +290,24 @@ type GetApiV1CurrencyHistory200JSONResponse []Rate
 func (response GetApiV1CurrencyHistory200JSONResponse) VisitGetApiV1CurrencyHistoryResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetApiV1CurrencyHistory404Response = NotFoundResponse
+
+func (response GetApiV1CurrencyHistory404Response) VisitGetApiV1CurrencyHistoryResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type GetApiV1CurrencyHistory500JSONResponse struct {
+	InternalServerErrorJSONResponse
+}
+
+func (response GetApiV1CurrencyHistory500JSONResponse) VisitGetApiV1CurrencyHistoryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
 
 	return json.NewEncoder(w).Encode(response)
 }

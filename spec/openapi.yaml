@@ -23,6 +23,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Rate"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /api/v1/{currency}/history:
     get:
@@ -42,6 +46,10 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Rate"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
 components:
   schemas:
@@ -59,3 +67,15 @@ components:
         published_at:
           type: string
           format: date-time
+  responses:
+    NotFound:
+      description: Not found
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string

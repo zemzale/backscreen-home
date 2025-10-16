@@ -96,7 +96,13 @@ type api struct {
 func (a api) GetApiV1Currency(ctx context.Context, req server.GetApiV1CurrencyRequestObject) (server.GetApiV1CurrencyResponseObject, error) {
 	rate, err := a.store.GetLatestRate(ctx, req.Currency)
 	if err != nil {
-		return server.GetApiV1Currency200JSONResponse{}, fmt.Errorf("failed to get rate: %w", err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return server.GetApiV1Currency404Response{}, nil
+		}
+
+		return server.GetApiV1Currency500JSONResponse{
+			InternalServerErrorJSONResponse: errToInternalServerError(err),
+		}, nil
 	}
 
 	return server.GetApiV1Currency200JSONResponse{
@@ -111,7 +117,13 @@ func (a api) GetApiV1Currency(ctx context.Context, req server.GetApiV1CurrencyRe
 func (a api) GetApiV1CurrencyHistory(ctx context.Context, req server.GetApiV1CurrencyHistoryRequestObject) (server.GetApiV1CurrencyHistoryResponseObject, error) {
 	rates, err := a.store.GetRates(ctx, req.Currency)
 	if err != nil {
-		return server.GetApiV1CurrencyHistory200JSONResponse{}, fmt.Errorf("failed to get rates: %w", err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return server.GetApiV1Currency404Response{}, nil
+		}
+
+		return server.GetApiV1CurrencyHistory500JSONResponse{
+			InternalServerErrorJSONResponse: errToInternalServerError(err),
+		}, nil
 	}
 
 	ratesResponse := slices.Map(rates, mapRateToApiV1CurrencyHistoryRate)
@@ -124,5 +136,12 @@ func mapRateToApiV1CurrencyHistoryRate(rate entity.Rate) server.Rate {
 		Code:        rate.Code,
 		Value:       rate.Value,
 		PublishedAt: rate.PublishedAt,
+	}
+}
+
+func errToInternalServerError(err error) server.InternalServerErrorJSONResponse {
+	errStr := err.Error()
+	return server.InternalServerErrorJSONResponse{
+		Error: &errStr,
 	}
 }
