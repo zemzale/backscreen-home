@@ -16,7 +16,7 @@ type Config struct {
 
 func (c Config) String() string {
 	return fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s",
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true",
 		c.User,
 		c.Password,
 		c.Host,
