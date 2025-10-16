@@ -8,10 +8,29 @@ tasks:
 
   build:
     deps: [generate]
+    sources:
+      - ./**/*.go
     cmds:
       - CGO_ENABLED=0 go build -v -o ./bin/app
 
+  run:api:
+    deps:
+      - build
+      - docker-up
+    cmds:
+      - ./bin/app api
+
+  run:sync:
+    deps:
+      - build
+      - docker-up
+    cmds:
+      - ./bin/app sync
+
   generate:
+    sources:
+      - ./generate.go
+      - ./spec/openapi.yaml
     cmds:
       - go generate ./...
 
