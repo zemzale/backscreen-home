@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/zemzale/backscreen-home/domain/usecase/syncer"
+	"github.com/zemzale/backscreen-home/primitives"
 	"github.com/zemzale/backscreen-home/sources/lvbank"
 )
 
@@ -22,9 +23,12 @@ var syncCmd = &cobra.Command{
 
 		logger.InfoContext(ctx, "Starting syncing currencies")
 
-		syncer.New(store, lvbank.New()).Sync(ctx, allowedCurrencies)
-		logger.InfoContext(ctx, "Finished syncing currencies")
+		syncer.New(
+			store,
+			lvbank.New(primitives.NewHTTPClient()),
+		).Sync(ctx, allowedCurrencies)
 
+		logger.InfoContext(ctx, "Finished syncing currencies")
 		return nil
 	},
 }

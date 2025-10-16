@@ -11,10 +11,14 @@ import (
 	"github.com/zemzale/backscreen-home/slices"
 )
 
-type Fetcher struct{}
+type Fetcher struct {
+	httpClient *http.Client
+}
 
-func New() *Fetcher {
-	return &Fetcher{}
+func New(httpClient *http.Client) *Fetcher {
+	return &Fetcher{
+		httpClient: httpClient,
+	}
 }
 
 func (f Fetcher) Fetch(ctx context.Context, currency string) ([]entity.Rate, error) {
@@ -32,7 +36,7 @@ func (f Fetcher) Fetch(ctx context.Context, currency string) ([]entity.Rate, err
 	// TODO: Change out the default client, since it's very bad and has no timeouts
 
 	logger.InfoContext(ctx, "Sending request for exchange rates", slog.String("url", url))
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := f.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch rates: %w", err)
 	}
