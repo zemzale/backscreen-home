@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/zemzale/backscreen-home/adapter/database"
 	"github.com/zemzale/backscreen-home/storage"
 )
@@ -19,14 +20,14 @@ var rootCmd = &cobra.Command{
 		ctx := cmd.Context()
 
 		logger := slog.With("component", "root")
-		logger.DebugContext(ctx, "Connecting to database")
 
+		logger.DebugContext(ctx, "Connecting to database")
 		db, err := database.New(&database.Config{
-			Host:     "127.0.0.1",
-			Port:     3306,
-			User:     "root",
-			Password: "root",
-			Database: "backscreen_home",
+			Host:     viper.GetString("database.host"),
+			Port:     viper.GetInt("database.port"),
+			User:     viper.GetString("database.user"),
+			Password: viper.GetString("database.password"),
+			Database: viper.GetString("database.database"),
 		})
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
@@ -48,6 +49,10 @@ func Execute() error {
 }
 
 func init() {
+	// Setup Viper to work with environment variables
+	viper.SetEnvPrefix("BACKSCREEN")
+	viper.AutomaticEnv()
+
 	rootCmd.AddCommand(apiCmd)
 	rootCmd.AddCommand(syncCmd)
 }
