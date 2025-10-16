@@ -2,11 +2,17 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/httplog/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/zemzale/backscreen-home/domain/entity"
@@ -28,13 +34,51 @@ var apiCmd = &cobra.Command{
 		logger.InfoContext(ctx, "Starting API", slog.String("host", host))
 
 		mux := chi.NewRouter()
-		handler := server.HandlerFromMux(server.NewStrictHandler(api{store: store}, nil), mux)
+		mux.Use(httplog.RequestLogger(logger, &httplog.Options{
+			Level:         slog.LevelDebug,
+			Schema:        httplog.SchemaECS,
+			RecoverPanics: true,
+		}))
+		handler := server.HandlerFromMux(
+			server.NewStrictHandler(api{store: store}, nil),
+			mux,
+		)
 
-		// TODO Move the server to a gorutine
-		// TODO Add a graceful shutdown
-		// TODO Add logging
-		if err := http.ListenAndServe(host, handler); err != nil {
-			return err
+		errChan := make(chan error, 1)
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+		server := &http.Server{
+			Addr:    host,
+			Handler: handler,
+		}
+
+		go func() {
+			errChan <- server.ListenAndServe()
+			close(errChan)
+		}()
+
+		select {
+		case err := <-errChan:
+			if err != nil {
+				if !errors.Is(err, http.ErrServerClosed) {
+					logger.ErrorContext(ctx, "API server closed with error", slog.String("err", err.Error()))
+				}
+				slog.InfoContext(ctx, "API stoped serving new conntections")
+			}
+		case <-ctx.Done():
+			return fmt.Errorf("context done: %w", ctx.Err())
+		case <-sigChan:
+			logger.InfoContext(ctx, "API received SIGINT or SIGTERM")
+
+			shutdownCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			defer cancel()
+
+			if err := server.Shutdown(shutdownCtx); err != nil {
+				logger.ErrorContext(ctx, "Failed to shutdown API", slog.String("err", err.Error()))
+			}
+
+			slog.InfoContext(ctx, "API shutdown")
 		}
 
 		return nil
