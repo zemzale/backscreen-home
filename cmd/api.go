@@ -7,7 +7,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/spf13/cobra"
+	"github.com/zemzale/backscreen-home/domain/entity"
 	"github.com/zemzale/backscreen-home/pkg/server"
+	"github.com/zemzale/backscreen-home/slices"
 	"github.com/zemzale/backscreen-home/storage"
 )
 
@@ -55,5 +57,20 @@ func (a api) GetApiV1Currency(ctx context.Context, req server.GetApiV1CurrencyRe
 // Get all historical exchange rates
 // (GET /api/v1/{currency}/history)
 func (a api) GetApiV1CurrencyHistory(ctx context.Context, req server.GetApiV1CurrencyHistoryRequestObject) (server.GetApiV1CurrencyHistoryResponseObject, error) {
-	return server.GetApiV1CurrencyHistory200JSONResponse{}, nil
+	rates, err := a.store.GetRates(ctx, req.Currency)
+	if err != nil {
+		return server.GetApiV1CurrencyHistory200JSONResponse{}, fmt.Errorf("failed to get rates: %w", err)
+	}
+
+	ratesResponse := slices.Map(rates, mapRateToApiV1CurrencyHistoryRate)
+
+	return server.GetApiV1CurrencyHistory200JSONResponse(ratesResponse), nil
+}
+
+func mapRateToApiV1CurrencyHistoryRate(rate entity.Rate) server.Rate {
+	return server.Rate{
+		Code:        rate.Code,
+		Value:       rate.Value,
+		PublishedAt: rate.PublishedAt,
+	}
 }

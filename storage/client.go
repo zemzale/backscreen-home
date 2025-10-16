@@ -10,6 +10,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/zemzale/backscreen-home/domain/entity"
+	"github.com/zemzale/backscreen-home/slices"
 )
 
 const createRatesTable = `
@@ -111,4 +112,17 @@ func (c *Client) GetLatestRate(ctx context.Context, code string) (entity.Rate, e
 	}
 
 	return rate.ToEntity(), nil
+}
+
+func (c *Client) GetRates(ctx context.Context, code string) ([]entity.Rate, error) {
+	var rates []Rate
+
+	err := c.db.SelectContext(ctx, &rates, `
+		SELECT code, value, published_at FROM rates WHERE code = ? ORDER BY published_at DESC;
+	`, code)
+	if err != nil {
+		return nil, err
+	}
+
+	return slices.Map(rates, func(r Rate) entity.Rate { return r.ToEntity() }), nil
 }
