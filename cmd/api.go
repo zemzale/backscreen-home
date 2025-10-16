@@ -3,10 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/zemzale/backscreen-home/domain/entity"
 	"github.com/zemzale/backscreen-home/pkg/server"
 	"github.com/zemzale/backscreen-home/slices"
@@ -18,14 +20,20 @@ var apiCmd = &cobra.Command{
 	Short: "Start the API",
 	Long:  `Start the API to get stored currency exchange rates.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+		logger := slog.With("component", "api")
+
+		host := viper.GetString("api.host")
+
+		logger.InfoContext(ctx, "Starting API", slog.String("host", host))
+
 		mux := chi.NewRouter()
 		handler := server.HandlerFromMux(server.NewStrictHandler(api{store: store}, nil), mux)
 
 		// TODO Move the server to a gorutine
 		// TODO Add a graceful shutdown
 		// TODO Add logging
-		// TODO Take the port from the config
-		if err := http.ListenAndServe(":8080", handler); err != nil {
+		if err := http.ListenAndServe(host, handler); err != nil {
 			return err
 		}
 
