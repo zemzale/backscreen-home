@@ -29,7 +29,9 @@ func New(store *storage.Client, fetcher RateFetcher) *Usecase {
 func (u *Usecase) Sync(ctx context.Context, currencies []string) {
 	logger := slog.With(slog.String("component", "sync"))
 
-	// TODO: Remove the WaitGroup and use some channels man
+	// This could be reworked to use channels and remove the WaitGroup, but for such a small slice of elemetnts,
+	// The performance actually goes down, since it does require more allocations up front
+	// If there were more elements to sync, it would be better to rework it.
 	wg := sync.WaitGroup{}
 	wg.Add(len(currencies))
 
@@ -55,7 +57,9 @@ func (u *Usecase) syncCurrency(ctx context.Context, currency string) {
 		return
 	}
 
-	// TODO: Batch the rate inserts, to get more performance
+	// This is actually the fasttest way since it doeesn't require allocations (for such small slices)
+	// of new slices for turning the rates into elements that the DB can understand
+	// So for the sake of myself I am just leaving it as is
 	logger.DebugContext(ctx, "Storing rates to database", slog.Any("rates", rates))
 	for _, rate := range rates {
 		if err := u.store.StoreRate(ctx, rate); err != nil {
