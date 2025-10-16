@@ -2,17 +2,15 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"sync"
 
 	"github.com/spf13/cobra"
 	"github.com/zemzale/backscreen-home/domain/entity"
 	"github.com/zemzale/backscreen-home/domain/mapper"
+	"github.com/zemzale/backscreen-home/domain/usecase/syncer"
 	"github.com/zemzale/backscreen-home/slices"
-	"github.com/zemzale/backscreen-home/storage"
 )
 
 var allowedCurrencies = []string{"AUD", "BGN", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK", "GBP", "HKD"}
@@ -29,22 +27,7 @@ var syncCmd = &cobra.Command{
 
 		logger.InfoContext(ctx, "Starting syncing currencies")
 
-		// TODO: Remove the WaitGroup and use some channels man
-		wg := sync.WaitGroup{}
-		wg.Add(len(allowedCurrencies))
-
-		for _, currency := range allowedCurrencies {
-			go func(wg *sync.WaitGroup, currency string) {
-				defer wg.Done()
-
-				logger.InfoContext(ctx, "Syncing currency", slog.String("currency", currency))
-
-				syncCurrency(ctx, store, currency, LVBankRSSRateFetcher{})
-			}(&wg, currency)
-		}
-
-		wg.Wait()
-
+		syncer.New(store, LVBankRSSRateFetcher{}).Sync(ctx, allowedCurrencies)
 		logger.InfoContext(ctx, "Finished syncing currencies")
 
 		return nil
@@ -53,31 +36,6 @@ var syncCmd = &cobra.Command{
 
 type RateFetcher interface {
 	Fetch(ctx context.Context, currency string) ([]entity.Rate, error) // TODO This shoudl return a list of rates, since one rquest can return multiple days
-}
-
-func syncCurrency(ctx context.Context, store *storage.Client, currency string, rateFetcher RateFetcher) {
-	logger := slog.With(slog.String("component", "sync"), slog.String("currency", currency))
-
-	rates, err := rateFetcher.Fetch(ctx, currency)
-	if err != nil {
-		logger.ErrorContext(ctx, "Failed to fetch rate", slog.Any("currency", currency), slog.Any("error", err))
-		return
-	}
-
-	// TODO: Batch the rate inserts, to get more performance
-	logger.DebugContext(ctx, "Storing rates to database", slog.Any("rates", rates))
-	for _, rate := range rates {
-		if err := store.StoreRate(ctx, rate); err != nil {
-			if errors.Is(err, storage.ErrDuplicate) {
-				logger.WarnContext(ctx,
-					"Rate already exists in database",
-					slog.Any("rate", rate),
-				)
-				continue
-			}
-			logger.ErrorContext(ctx, "Failed to store rate", slog.Any("rate", rate), slog.Any("error", err))
-		}
-	}
 }
 
 // TODO: Maybe just move this to some other package to make it clearer
