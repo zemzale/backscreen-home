@@ -3,20 +3,24 @@
 ## Instructions
 
 ### Prerequisites
-- Go 1.25
 - Docker
 
 ### Running the sync command
 ```bash
-go tool -task run:sync
+docker compose run --rm sync
 ```
 
 ### Running the API
 ```bash
-go tool -task run:api
+docker compose up -d 
 ```
 
+And any other normal docker commands. The API is configured through the environment variables, 
+to run inside the docker compose environment, you can use the `.env.example` file as a template.
+
 ## Task
+
+(note: I have rewritten the task text a bit, since it was not clear enough IMO)
 
 Create a microservice in Go language, which fetches currency exchange rates 
 from https://www.bank.lv/vk/ecb_rss.xml RSS feed and shows it to users.
