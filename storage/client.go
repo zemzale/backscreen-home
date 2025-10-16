@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
@@ -39,6 +40,23 @@ CREATE TABLE IF NOT EXISTS import_data (
 var schemas = []string{
 	createRatesTable,
 	createImportDataTable,
+}
+
+type Rate struct {
+	ID          int       `db:"id"`
+	Code        string    `db:"code"`
+	Value       string    `db:"value"`
+	PunlishedAt time.Time `db:"published_at"`
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
+}
+
+func (r Rate) ToEntity() entity.Rate {
+	return entity.Rate{
+		Code:        r.Code,
+		Value:       r.Value,
+		PublishedAt: r.PunlishedAt,
+	}
 }
 
 type Client struct {
@@ -80,4 +98,17 @@ func (c *Client) StoreRate(ctx context.Context, rate entity.Rate) error {
 	}
 
 	return err
+}
+
+func (c *Client) GetLatestRate(ctx context.Context, code string) (entity.Rate, error) {
+	var rate Rate
+
+	err := c.db.GetContext(ctx, &rate, `
+		SELECT code, value, published_at FROM rates WHERE code = ? ORDER BY published_at DESC LIMIT 1;
+	`, code)
+	if err != nil {
+		return entity.Rate{}, err
+	}
+
+	return rate.ToEntity(), nil
 }

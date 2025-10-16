@@ -17,9 +17,9 @@ import (
 
 // Rate defines model for Rate.
 type Rate struct {
-	Code        *string    `json:"code,omitempty"`
-	PublishedAt *time.Time `json:"published_at,omitempty"`
-	Value       *string    `json:"value,omitempty"`
+	Code        string    `json:"code"`
+	PublishedAt time.Time `json:"published_at"`
+	Value       string    `json:"value"`
 }
 
 // ServerInterface represents all server handlers.

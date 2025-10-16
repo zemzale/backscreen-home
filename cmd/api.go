@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/spf13/cobra"
 	"github.com/zemzale/backscreen-home/pkg/server"
+	"github.com/zemzale/backscreen-home/storage"
 )
 
 var apiCmd = &cobra.Command{
@@ -15,7 +17,7 @@ var apiCmd = &cobra.Command{
 	Long:  `Start the API to get stored currency exchange rates.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		mux := chi.NewRouter()
-		handler := server.HandlerFromMux(server.NewStrictHandler(api{}, nil), mux)
+		handler := server.HandlerFromMux(server.NewStrictHandler(api{store: store}, nil), mux)
 
 		// TODO Move the server to a gorutine
 		// TODO Add a graceful shutdown
@@ -31,12 +33,23 @@ var apiCmd = &cobra.Command{
 
 var _ server.StrictServerInterface = &api{}
 
-type api struct{}
+type api struct {
+	store *storage.Client
+}
 
 // Get latest exchange rate
 // (GET /api/v1/{currency})
 func (a api) GetApiV1Currency(ctx context.Context, req server.GetApiV1CurrencyRequestObject) (server.GetApiV1CurrencyResponseObject, error) {
-	return server.GetApiV1Currency200JSONResponse{}, nil
+	rate, err := a.store.GetLatestRate(ctx, req.Currency)
+	if err != nil {
+		return server.GetApiV1Currency200JSONResponse{}, fmt.Errorf("failed to get rate: %w", err)
+	}
+
+	return server.GetApiV1Currency200JSONResponse{
+		Code:        rate.Code,
+		PublishedAt: rate.PublishedAt,
+		Value:       rate.Value,
+	}, nil
 }
 
 // Get all historical exchange rates

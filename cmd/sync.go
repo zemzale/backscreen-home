@@ -9,7 +9,6 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
 	"github.com/zemzale/backscreen-home/domain/entity"
 	"github.com/zemzale/backscreen-home/domain/mapper"
@@ -28,18 +27,6 @@ var syncCmd = &cobra.Command{
 
 		logger := slog.With("component", "sync")
 
-		logger.DebugContext(ctx, "Connecting to database")
-		db, err := sqlx.Connect("mysql", "root:root@tcp(localhost:3306)/backscreen_home")
-		if err != nil {
-			return fmt.Errorf("failed to connect to database: %w", err)
-		}
-
-		logger.DebugContext(ctx, "Creating storage client")
-		storage := storage.New(db)
-		if err := storage.Migrate(ctx); err != nil {
-			return fmt.Errorf("failed to migrate database: %w", err)
-		}
-
 		logger.InfoContext(ctx, "Starting syncing currencies")
 
 		// TODO: Remove the WaitGroup and use some channels man
@@ -52,7 +39,7 @@ var syncCmd = &cobra.Command{
 
 				logger.InfoContext(ctx, "Syncing currency", slog.String("currency", currency))
 
-				if err := syncCurrency(ctx, storage, currency, LVBankRSSRateFetcher{}); err != nil {
+				if err := syncCurrency(ctx, store, currency, LVBankRSSRateFetcher{}); err != nil {
 					logger.ErrorContext(ctx, "Failed to sync currency", slog.String("currency", currency), slog.Any("error", err))
 				}
 			}(&wg, currency)

@@ -47,6 +47,10 @@ components:
   schemas:
     Rate:
       type: object
+      required:
+        - code
+        - value
+        - published_at
       properties:
         code:
           type: string
