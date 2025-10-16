@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
+	"github.com/zemzale/backscreen-home/adapter/database"
 	"github.com/zemzale/backscreen-home/storage"
 )
 
@@ -21,7 +21,13 @@ var rootCmd = &cobra.Command{
 		logger := slog.With("component", "root")
 		logger.DebugContext(ctx, "Connecting to database")
 
-		db, err := sqlx.Connect("mysql", "root:root@tcp(localhost:3306)/backscreen_home?parseTime=true")
+		db, err := database.New(&database.Config{
+			Host:     "127.0.0.1",
+			Port:     3306,
+			User:     "root",
+			Password: "root",
+			Database: "backscreen_home",
+		})
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}

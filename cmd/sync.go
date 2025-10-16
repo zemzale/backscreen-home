@@ -4,9 +4,9 @@ import (
 	"log/slog"
 
 	"github.com/spf13/cobra"
+	"github.com/zemzale/backscreen-home/adapter/lvbank"
 	"github.com/zemzale/backscreen-home/domain/usecase/syncer"
 	"github.com/zemzale/backscreen-home/primitives"
-	"github.com/zemzale/backscreen-home/sources/lvbank"
 )
 
 var allowedCurrencies = []string{"AUD", "BGN", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK", "GBP", "HKD"}
