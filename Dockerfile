@@ -1,0 +1,26 @@
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 go tool task build
+
+FROM alpine:3.17.3
+
+COPY --from=builder /app/bin/app /app/api
+
+ENV BACKSCREEN_DATABASE.HOST=db
+ENV BACKSCREEN_DATABASE.PORT=3306
+ENV BACKSCREEN_DATABASE.USER=root
+ENV BACKSCREEN_DATABASE.PASSWORD=root
+ENV BACKSCREEN_DATABASE.DATABASE=backscreen_home
+ENV BACKSCREEN_API.HOST=:8080
+ENV BACKSCREEN_LOG_LEVEL=debug
+
+EXPOSE 8080
+
+ENTRYPOINT ["/app/api"]

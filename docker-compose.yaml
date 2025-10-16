@@ -8,6 +8,43 @@ services:
       - 3306:3306
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'mysqladmin ping -h 127.0.0.1 -u"root" -p"root"']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  api:
+    build: .
+    environment:
+      BACKSCREEN_DATABASE.HOST: db
+      BACKSCREEN_DATABASE.PORT: 3306
+      BACKSCREEN_DATABASE.USER: root
+      BACKSCREEN_DATABASE.PASSWORD: root
+      BACKSCREEN_DATABASE.DATABASE: backscreen_home
+      BACKSCREEN_LOG_LEVEL: debug
+    ports:
+      - 8080:8080
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["/app/api", "api"]
+
+  sync:
+    build: .
+    environment:
+      BACKSCREEN_DATABASE.HOST: db
+      BACKSCREEN_DATABASE.PORT: 3306
+      BACKSCREEN_DATABASE.USER: root
+      BACKSCREEN_DATABASE.PASSWORD: root
+      BACKSCREEN_DATABASE.DATABASE: backscreen_home
+      BACKSCREEN_LOG_LEVEL: debug
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["/app/api", "sync"]
+    profiles:
+      - manual
 
 volumes:
   mysql_data:
