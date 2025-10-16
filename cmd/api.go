@@ -17,6 +17,10 @@ var apiCmd = &cobra.Command{
 		mux := chi.NewRouter()
 		handler := server.HandlerFromMux(server.NewStrictHandler(api{}, nil), mux)
 
+		// TODO Move the server to a gorutine
+		// TODO Add a graceful shutdown
+		// TODO Add logging
+		// TODO Take the port from the config
 		if err := http.ListenAndServe(":8080", handler); err != nil {
 			return err
 		}
