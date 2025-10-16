@@ -1,5 +1,21 @@
 # Backscreen homework
 
+## Instructions
+
+### Prerequisites
+- Go 1.25
+- Docker
+
+### Running the sync command
+```bash
+go tool -task run:sync
+```
+
+### Running the API
+```bash
+go tool -task run:api
+```
+
 ## Task
 
 Create a microservice in Go language, which fetches currency exchange rates 
